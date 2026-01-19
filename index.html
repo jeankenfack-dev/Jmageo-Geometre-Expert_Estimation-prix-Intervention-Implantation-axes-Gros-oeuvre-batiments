@@ -2,6 +2,8 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>JMAGEO - Estimation intervention</title>
 
 <style>
@@ -9,6 +11,11 @@
     --primary: #a84c30;
     --secondary: #6d6e71;
     --bg: #f7f7f7;
+}
+
+/* RESET */
+* {
+    box-sizing: border-box;
 }
 
 body {
@@ -22,49 +29,53 @@ body {
 header {
     background: white;
     text-align: center;
-    padding: 20px;
+    padding: 20px 15px;
     border-bottom: 3px solid var(--primary);
 }
 
 header img {
+    width: 100%;
     max-width: 180px;
+    height: auto;
     margin-bottom: 10px;
 }
 
 header h1 {
-    font-size: 20px;
+    font-size: clamp(18px, 4vw, 22px);
     margin: 0;
     color: var(--primary);
 }
 
 header p {
     margin-top: 5px;
-    font-size: 14px;
+    font-size: clamp(13px, 3.5vw, 15px);
     color: var(--secondary);
 }
 
 /* CONTENU */
 main {
-    max-width: 700px;
-    margin: 30px auto;
+    max-width: 720px;
+    margin: 20px auto;
     background: white;
-    padding: 30px;
+    padding: 20px;
     border-radius: 6px;
     box-shadow: 0 6px 18px rgba(0,0,0,0.08);
 }
 
+/* FORMULAIRE */
 label {
     display: block;
     margin-top: 18px;
     font-weight: bold;
     color: var(--secondary);
+    font-size: 14px;
 }
 
 input, select {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     margin-top: 8px;
-    font-size: 14px;
+    font-size: 15px;
     border: 1px solid #ccc;
     border-radius: 4px;
 }
@@ -75,7 +86,7 @@ button {
     padding: 14px;
     background: var(--primary);
     color: white;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: bold;
     border: none;
     border-radius: 4px;
@@ -86,12 +97,13 @@ button:hover {
     background: #8f3f27;
 }
 
+/* RESULTAT */
 #resultat {
     margin-top: 25px;
     padding: 15px;
     background: #fafafa;
     border-left: 5px solid var(--primary);
-    font-size: 16px;
+    font-size: 15px;
 }
 
 /* FOOTER */
@@ -101,6 +113,31 @@ footer {
     color: var(--secondary);
     text-align: center;
     line-height: 1.6;
+}
+
+footer a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: bold;
+}
+
+/* TABLETTE & DESKTOP */
+@media (min-width: 768px) {
+    main {
+        padding: 30px;
+    }
+
+    label {
+        font-size: 15px;
+    }
+
+    input, select {
+        font-size: 16px;
+    }
+
+    #resultat {
+        font-size: 16px;
+    }
 }
 </style>
 </head>
@@ -118,10 +155,16 @@ footer {
     <label>Adresse ou ville du chantier (France)</label>
     <input type="text" id="adresse" placeholder="Ex : 5 rue Victor Hugo, Reims">
 
-    <label>Choississez dans la liste le type d'implantation ("implantation initiale" ou "report des axes sur VPP") </label>
+    <label>
+        Sélectionnez dans la liste le type d'implantation
+        ("implantation initiale" ou "report des axes sur VPP")
+    </label>
     <select id="type">
         <option value="A">Implantation initiale des axes gros-œuvre de bâtiments</option>
-        <option value="B">Report des axes gros-oeuvre de l'implantation initale sur voiles-par-passes ou voiles-contre-terre</option>
+        <option value="B">
+            Report des axes gros-œuvre de l'implantation initiale
+            sur voiles-par-passes ou voiles-contre-terre
+        </option>
     </select>
 
     <label>Nombre d’axes à implanter</label>
@@ -133,7 +176,11 @@ footer {
 
     <footer>
         Le prix est estimatif et correspond à un déplacement sur le terrain.
-        Si besoin, veuillez nous écrire à : <a href="mailto:contact@jmageo.com">contact@jmageo.com</a> - Notre site Web <a href="https://www.jmageo.com">www.jmageo.com</a>, Merci pour votre confiance!
+        Si besoin, veuillez nous écrire à :
+        <a href="mailto:contact@jmageo.com">contact@jmageo.com</a>
+        – Notre site Web
+        <a href="https://www.jmageo.com" target="_blank">www.jmageo.com</a><br>
+        <strong>Merci pour votre confiance!</strong>
     </footer>
 
 </main>
@@ -158,21 +205,17 @@ function haversine(lat1, lon1, lat2, lon2) {
 
 // Géocodage Nominatim
 async function geocode(adresse) {
-    const url = "https://nominatim.openstreetmap.org/search?format=json&q="
-        + encodeURIComponent(adresse)
-        + "&countrycodes=fr";
+    const url =
+        "https://nominatim.openstreetmap.org/search?format=json&q=" +
+        encodeURIComponent(adresse) +
+        "&countrycodes=fr";
 
     const response = await fetch(url);
     const data = await response.json();
 
-    if (data.length === 0) {
-        throw "Adresse introuvable";
-    }
+    if (!data.length) throw "Adresse introuvable";
 
-    return {
-        lat: parseFloat(data[0].lat),
-        lon: parseFloat(data[0].lon)
-    };
+    return { lat: +data[0].lat, lon: +data[0].lon };
 }
 
 async function calculer() {
@@ -190,30 +233,20 @@ async function calculer() {
 
     try {
         const chantier = await geocode(adresse);
-        const distance = haversine(
-            JMAGEO_LAT, JMAGEO_LON,
-            chantier.lat, chantier.lon
-        );
+        const Km =
+            haversine(JMAGEO_LAT, JMAGEO_LON, chantier.lat, chantier.lon) * 1.30;
 
-        const Km = distance * 1.30;
-
-        let prix = 0;
-
+        let prix;
         if (type === "A") {
-            prix = (n <= 2)
-                ? 800 + 3 * Km + 200 * n
-                : 1000 + 3 * Km + 200 * n;
+            prix = n <= 2 ? 800 + 3 * Km + 200 * n : 1000 + 3 * Km + 200 * n;
         } else {
-            prix = (n <= 2)
-                ? 500 + 3 * Km + 100 * n
-                : 800 + 3 * Km + 110 * n;
+            prix = n <= 2 ? 500 + 3 * Km + 100 * n : 800 + 3 * Km + 110 * n;
         }
 
         resultat.innerHTML =
             "Distance estimée : <strong>" + Km.toFixed(1) + " km</strong><br>" +
             "Prix estimatif : <strong>" + prix.toFixed(0) + " € HT</strong>";
-
-    } catch (e) {
+    } catch {
         resultat.innerHTML = "Erreur lors de la localisation du chantier.";
     }
 }
@@ -221,7 +254,3 @@ async function calculer() {
 
 </body>
 </html>
-
-
-
-
