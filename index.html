@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>JMAGEO – Estimation implantation axes gros œuvre</title>
+<title>JMAGEO - Estimation intervention</title>
 
 <style>
 :root {
@@ -13,24 +13,214 @@
 
 body {
     margin: 0;
-    font-family: "Segoe UI", Arial, sans-serif;
+    font-family: Arial, Helvetica, sans-serif;
     background: var(--bg);
     color: #333;
 }
 
-.header {
+/* HEADER */
+header {
     background: white;
-    border-bottom: 3px solid var(--primary);
-    padding: 20px 15px;
     text-align: center;
+    padding: 20px;
+    border-bottom: 3px solid var(--primary);
 }
 
-.header img {
+header img {
     max-width: 180px;
     margin-bottom: 10px;
 }
 
-.header h1 {
+header h1 {
     font-size: 20px;
-    margin: 8px 0 4px;
-    color: va
+    margin: 0;
+    color: var(--primary);
+}
+
+header p {
+    margin-top: 5px;
+    font-size: 14px;
+    color: var(--secondary);
+}
+
+/* CONTENU */
+main {
+    max-width: 700px;
+    margin: 30px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 6px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+label {
+    display: block;
+    margin-top: 18px;
+    font-weight: bold;
+    color: var(--secondary);
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+button {
+    margin-top: 25px;
+    width: 100%;
+    padding: 14px;
+    background: var(--primary);
+    color: white;
+    font-size: 15px;
+    font-weight: bold;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #8f3f27;
+}
+
+#resultat {
+    margin-top: 25px;
+    padding: 15px;
+    background: #fafafa;
+    border-left: 5px solid var(--primary);
+    font-size: 16px;
+}
+
+/* FOOTER */
+footer {
+    margin-top: 25px;
+    font-size: 13px;
+    color: var(--secondary);
+    text-align: center;
+    line-height: 1.6;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <img src="logo-jmageo.png" alt="JMAGEO">
+    <h1>JMAGEO - Estimez le coût de notre intervention</h1>
+    <p>Implantation des axes gros-œuvre de bâtiments</p>
+</header>
+
+<main>
+
+    <label>Adresse ou ville du chantier (France)</label>
+    <input type="text" id="adresse" placeholder="Ex : 5 rue Victor Hugo, Reims">
+
+    <label>Type d’intervention</label>
+    <select id="type">
+        <option value="A">Implantation initiale des axes gros œuvre</option>
+        <option value="B">Report des axes sur voiles par-passes</option>
+    </select>
+
+    <label>Nombre d’axes à implanter</label>
+    <input type="number" id="n" min="1" value="1">
+
+    <button onclick="calculer()">Calculer l’estimation</button>
+
+    <div id="resultat"></div>
+
+    <footer>
+        Le prix est estimatif et correspond à un déplacement sur le terrain.
+        Si besoin, nous écrire à l'adresse suivante:
+        <strong>contact@jmageo.com</strong> ou vister notre site web
+        <strong>www.jmageo.com</strong><br>
+        <strong>Merci pour votre confiance!</strong>
+    </footer>
+
+</main>
+
+<script>
+// Adresse JMAGEO
+const JMAGEO_LAT = 48.5701;
+const JMAGEO_LON = 2.6324;
+
+// Distance Haversine
+function haversine(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1 * Math.PI / 180) *
+        Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Géocodage Nominatim
+async function geocode(adresse) {
+    const url = "https://nominatim.openstreetmap.org/search?format=json&q="
+        + encodeURIComponent(adresse)
+        + "&countrycodes=fr";
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.length === 0) {
+        throw "Adresse introuvable";
+    }
+
+    return {
+        lat: parseFloat(data[0].lat),
+        lon: parseFloat(data[0].lon)
+    };
+}
+
+async function calculer() {
+    const adresse = document.getElementById("adresse").value;
+    const type = document.getElementById("type").value;
+    const n = parseInt(document.getElementById("n").value);
+    const resultat = document.getElementById("resultat");
+
+    if (!adresse || n <= 0) {
+        resultat.innerHTML = "Veuillez saisir une adresse valide et un nombre d’axes.";
+        return;
+    }
+
+    resultat.innerHTML = "Calcul en cours...";
+
+    try {
+        const chantier = await geocode(adresse);
+        const distance = haversine(
+            JMAGEO_LAT, JMAGEO_LON,
+            chantier.lat, chantier.lon
+        );
+
+        const Km = distance * 1.25;
+
+        let prix = 0;
+
+        if (type === "A") {
+            prix = (n <= 2)
+                ? 800 + 3 * Km + 200 * n
+                : 1000 + 3 * Km + 200 * n;
+        } else {
+            prix = (n <= 2)
+                ? 500 + 3 * Km + 100 * n
+                : 800 + 3 * Km + 110 * n;
+        }
+
+        resultat.innerHTML =
+            "Distance estimée : <strong>" + Km.toFixed(1) + " km</strong><br>" +
+            "Prix estimatif : <strong>" + prix.toFixed(0) + " € HT</strong>";
+
+    } catch (e) {
+        resultat.innerHTML = "Erreur lors de la localisation du chantier.";
+    }
+}
+</script>
+
+</body>
+</html>
