@@ -185,74 +185,10 @@ footer a {
 
 </main>
 
-<script>
-// Adresse JMAGEO
-const JMAGEO_LAT = 48.5701;
-const JMAGEO_LON = 2.6324;
-
-// Distance Haversine
-function haversine(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a =
-        Math.sin(dLat / 2) ** 2 +
-        Math.cos(lat1 * Math.PI / 180) *
-        Math.cos(lat2 * Math.PI / 180) *
-        Math.sin(dLon / 2) ** 2;
-    return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-// Géocodage Nominatim
-async function geocode(adresse) {
-    const url =
-        "https://nominatim.openstreetmap.org/search?format=json&q=" +
-        encodeURIComponent(adresse) +
-        "&countrycodes=fr";
-
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (!data.length) throw "Adresse introuvable";
-
-    return { lat: +data[0].lat, lon: +data[0].lon };
-}
-
-async function calculer() {
-    const adresse = document.getElementById("adresse").value;
-    const type = document.getElementById("type").value;
-    const n = parseInt(document.getElementById("n").value);
-    const resultat = document.getElementById("resultat");
-
-    if (!adresse || n <= 0) {
-        resultat.innerHTML = "Veuillez saisir une adresse valide et un nombre d’axes.";
-        return;
-    }
-
-    resultat.innerHTML = "Calcul en cours...";
-
-    try {
-        const chantier = await geocode(adresse);
-        const Km =
-            haversine(JMAGEO_LAT, JMAGEO_LON, chantier.lat, chantier.lon) * 1.30;
-
-        let prix;
-        if (type === "A") {
-            prix = n <= 2 ? 800 + 3 * Km + 200 * n : 1000 + 3 * Km + 200 * n;
-        } else {
-            prix = n <= 2 ? 500 + 3 * Km + 100 * n : 800 + 3 * Km + 110 * n;
-        }
-
-        resultat.innerHTML =
-            "Distance estimée : <strong>" + Km.toFixed(1) + " km</strong><br>" +
-            "Prix estimatif : <strong>" + prix.toFixed(0) + " € HT</strong>";
-    } catch {
-        resultat.innerHTML = "Erreur lors de la localisation du chantier.";
-    }
-}
-</script>
+<script src="app.min.js"></script>
 
 </body>
 </html>
+
 
 
